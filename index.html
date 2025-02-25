@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Arfi assistant</title>
+    <style>
+      /* Стили для всей страницы */
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f4;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      /* Заголовок страницы */
+      header {
+        background-color: #4caf50;
+        color: white;
+        width: 100%;
+        padding: 20px 0;
+        text-align: center;
+        font-size: 24px;
+      }
+      /* Контейнер для содержимого */
+      .container {
+        margin: 50px auto;
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        width: 80%;
+        max-width: 600px;
+      }
+      /* Стили для поля ввода */
+      input[type="text"] {
+        width: calc(100% - 20px);
+        padding: 10px;
+        margin-bottom: 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 16px;
+      }
+      /* Стили для кнопки */
+      button {
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+      }
+      button:hover {
+        background-color: #45a049;
+      }
+      /* Стили для блока с ответом */
+      #responseContainer {
+        margin-top: 20px;
+        font-weight: bold;
+        background: #e7f3e7;
+        padding: 15px;
+        border-radius: 4px;
+        border: 1px solid #dcdcdc;
+      }
+    </style>
+  </head>
+  <body>
+    <header>Arfi assistant</header>
+    <div class="container">
+      <form id="promptForm">
+        <input
+          type="text"
+          id="promptInput"
+          placeholder="Enter your query"
+          required
+        />
+        <button type="submit">Ask</button>
+      </form>
+      <div id="responseContainer"></div>
+    </div>
+
+    <script>
+      document
+        .getElementById("promptForm")
+        .addEventListener("submit", async function (event) {
+          event.preventDefault();
+          const prompt = document.getElementById("promptInput").value;
+
+          try {
+            const response = await fetch("http://127.0.0.1:8000/ask", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ prompt: prompt }),
+            });
+            const data = await response.json();
+            document.getElementById("responseContainer").innerText =
+              data.answer || "No answer received";
+          } catch (error) {
+            document.getElementById("responseContainer").innerText =
+              "Error: " + error;
+          }
+        });
+    </script>
+  </body>
+</html>
