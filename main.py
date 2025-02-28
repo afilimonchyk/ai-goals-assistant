@@ -1,48 +1,42 @@
-from fastapi import FastAPI, HTTPException  # Импортируем FastAPI и HTTPException для обработки ошибок
-from fastapi.middleware.cors import CORSMiddleware  # Импортируем CORSMiddleware для поддержки CORS
-from pydantic import BaseModel            # Импортируем BaseModel для описания структуры входных данных
-import openai                             # Импортируем библиотеку openai
-from dotenv import load_dotenv            # Импортируем функцию загрузки переменных окружения
-import os                                 # Импортируем модуль os для работы с переменными окружения
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+import openai
+from dotenv import load_dotenv
+import os
 
-# Загружаем переменные окружения из файла .env
+# Load environment variables
 load_dotenv()
-
-# Получаем API-ключ из переменной окружения
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-app = FastAPI()  # Создаем экземпляр приложения
+# Initialize FastAPI app
+app = FastAPI()
 
-# Добавляем поддержку CORS, чтобы разрешить предварительные запросы (OPTIONS)
+# Enable CORS to allow frontend communication
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # разрешает запросы с любого источника; для продакшена укажи конкретные адреса
+    allow_origins=["*"],  # Allow requests from any domain (for development)
     allow_credentials=True,
-    allow_methods=["*"],  # разрешены все методы (GET, POST, OPTIONS и т.д.)
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Модель данных для входящего запроса
-class Prompt(BaseModel):
-    prompt: str  # Ожидается, что пользователь пришлет строку с запросом
+# Define request model
+class ChatRequest(BaseModel):
+    messages: list  # Expecting a list of messages (chat history)
 
-# Маршрут для отправки запроса к OpenAI
+# Endpoint to handle chat messages
 @app.post("/ask")
-async def ask_openai(prompt: Prompt):
+async def ask_openai(chat_request: ChatRequest):
     """
-    Эта функция принимает запрос с полем prompt, отправляет его к OpenAI и возвращает ответ модели.
+    Receives chat history, sends it to OpenAI, and returns the AI response.
     """
     try:
-        # Отправляем запрос к API OpenAI, используя модель GPT-3.5 Turbo
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
-            messages=[
-                {"role": "user", "content": prompt.prompt}
-            ]
+            messages=chat_request.messages
         )
-        # Извлекаем текст ответа
-        answer = response.choices[0].message.content
-        return {"answer": answer}
+        return {"answer": response.choices[0].message.content}
     except Exception as e:
-        # Если что-то пошло не так, возвращаем ошибку
         raise HTTPException(status_code=500, detail=str(e))
+

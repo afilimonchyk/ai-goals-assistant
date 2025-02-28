@@ -4,7 +4,6 @@
     <meta charset="UTF-8" />
     <title>Arfi assistant</title>
     <style>
-      /* Стили для всей страницы */
       body {
         font-family: Arial, sans-serif;
         background-color: #f4f4f4;
@@ -14,7 +13,6 @@
         flex-direction: column;
         align-items: center;
       }
-      /* Заголовок страницы */
       header {
         background-color: #4caf50;
         color: white;
@@ -23,26 +21,53 @@
         text-align: center;
         font-size: 24px;
       }
-      /* Контейнер для содержимого */
       .container {
-        margin: 50px auto;
+        margin: 20px auto;
         background: white;
         padding: 20px;
         border-radius: 8px;
         box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         width: 80%;
         max-width: 600px;
+        display: flex;
+        flex-direction: column;
       }
-      /* Стили для поля ввода */
-      input[type="text"] {
-        width: calc(100% - 20px);
+      #chat {
+        border: 1px solid #ccc;
+        border-radius: 5px;
         padding: 10px;
-        margin-bottom: 10px;
+        height: 300px;
+        overflow-y: auto;
+        background: #fff;
+        display: flex;
+        flex-direction: column;
+      }
+      .message {
+        padding: 8px 12px;
+        border-radius: 5px;
+        margin: 5px;
+        max-width: 80%;
+        word-wrap: break-word;
+      }
+      .user {
+        background-color: #d1e7dd;
+        align-self: flex-end;
+      }
+      .bot {
+        background-color: #f8d7da;
+        align-self: flex-start;
+      }
+      #inputForm {
+        display: flex;
+        margin-top: 10px;
+      }
+      input[type="text"] {
+        flex: 1;
+        padding: 10px;
         border: 1px solid #ccc;
         border-radius: 4px;
         font-size: 16px;
       }
-      /* Стили для кнопки */
       button {
         background-color: #4caf50;
         color: white;
@@ -51,59 +76,81 @@
         border-radius: 4px;
         cursor: pointer;
         font-size: 16px;
+        margin-left: 10px;
       }
       button:hover {
         background-color: #45a049;
-      }
-      /* Стили для блока с ответом */
-      #responseContainer {
-        margin-top: 20px;
-        font-weight: bold;
-        background: #e7f3e7;
-        padding: 15px;
-        border-radius: 4px;
-        border: 1px solid #dcdcdc;
       }
     </style>
   </head>
   <body>
     <header>Arfi assistant</header>
     <div class="container">
-      <form id="promptForm">
+      <div id="chat"></div>
+      <form id="inputForm">
         <input
           type="text"
-          id="promptInput"
-          placeholder="Enter your query"
+          id="userInput"
+          placeholder="Enter your message"
           required
         />
-        <button type="submit">Ask</button>
+        <button type="submit">Send</button>
       </form>
-      <div id="responseContainer"></div>
     </div>
 
     <script>
+      // Store chat history
+      const chatHistory = [];
+
       document
-        .getElementById("promptForm")
+        .getElementById("inputForm")
         .addEventListener("submit", async function (event) {
           event.preventDefault();
-          const prompt = document.getElementById("promptInput").value;
+          const userInput = document.getElementById("userInput").value;
+          if (!userInput.trim()) return;
+
+          // Add user message to chat
+          addMessage(userInput, "user");
+
+          // Save user message in chat history
+          chatHistory.push({ role: "user", content: userInput });
+
+          // Clear input field
+          document.getElementById("userInput").value = "";
 
           try {
+            // Send request to FastAPI server
             const response = await fetch("http://127.0.0.1:8000/ask", {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
               },
-              body: JSON.stringify({ prompt: prompt }),
+              body: JSON.stringify({ messages: chatHistory }),
             });
+
             const data = await response.json();
-            document.getElementById("responseContainer").innerText =
-              data.answer || "No answer received";
+
+            // Add bot response to chat
+            addMessage(data.answer || "No response received", "bot");
+
+            // Save bot response in chat history
+            chatHistory.push({ role: "assistant", content: data.answer });
           } catch (error) {
-            document.getElementById("responseContainer").innerText =
-              "Error: " + error;
+            addMessage("Error: " + error, "bot");
           }
         });
+
+      // Function to add a message to the chat window
+      function addMessage(text, sender) {
+        const chat = document.getElementById("chat");
+        const messageDiv = document.createElement("div");
+        messageDiv.classList.add("message", sender);
+        messageDiv.innerText = text;
+        chat.appendChild(messageDiv);
+
+        // Scroll chat to the latest message
+        chat.scrollTop = chat.scrollHeight;
+      }
     </script>
   </body>
 </html>
