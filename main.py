@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import openai
 from dotenv import load_dotenv
+from fastapi.staticfiles import StaticFiles
 import os
 
 # Load environment variables
@@ -11,6 +12,9 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 
 # Initialize FastAPI app
 app = FastAPI()
+
+# Получаем абсолютный путь к текущей папке (где находится main.py)
+current_directory = os.path.dirname(os.path.abspath(__file__))
 
 # Enable CORS to allow frontend communication
 app.add_middleware(
@@ -40,3 +44,5 @@ async def ask_openai(chat_request: ChatRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+# Раздаем статические файлы (HTML, CSS, JS) из той же папки, где лежит main.py
+app.mount("/", StaticFiles(directory=current_directory, html=True), name="static")

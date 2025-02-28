@@ -1,0 +1,144 @@
+/* Global page styles */
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f4f4f4;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Header styles */
+header {
+  background-color: #4caf50;
+  color: white;
+  width: 100%;
+  padding: 20px 0;
+  text-align: center;
+  font-size: 24px;
+}
+
+/* Main container for chat and input */
+.container {
+  margin: 20px auto;
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  width: 80%;
+  max-width: 600px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Chat window */
+#chat {
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  padding: 10px;
+  height: 300px;
+  overflow-y: auto;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Message styles */
+.message {
+  padding: 8px 12px;
+  border-radius: 5px;
+  margin: 5px;
+  max-width: 80%;
+  word-wrap: break-word;
+  position: relative; /* Для позиционирования таймстемпа */
+}
+
+/* User messages (align right, green background) */
+.user {
+  background-color: #d1e7dd;
+  align-self: flex-end;
+}
+
+/* Bot messages (align left, red background) */
+.bot {
+  background-color: #f8d7da;
+  align-self: flex-start;
+}
+
+/* Typing indicator */
+.typing {
+  font-style: italic;
+  color: #888;
+  align-self: flex-start;
+}
+
+/* Input field and button */
+#inputForm {
+  display: flex;
+  margin-top: 10px;
+}
+
+/* Input field */
+input[type="text"] {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 16px;
+}
+
+/* Send button */
+button {
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  margin-left: 10px;
+}
+
+/* Button hover effect */
+button:hover {
+  background-color: #45a049;
+}
+
+/* Style for timestamp */
+.timestamp {
+  font-size: 10px;
+  color: #777;
+  display: block;
+  text-align: right;
+  margin-top: 4px;
+}
+
+/* Clear chat button style */
+#clearChat {
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+/* Адаптивность для мобильных устройств */
+@media screen and (max-width: 600px) {
+  .container {
+    width: 95%;
+    padding: 10px;
+  }
+
+  button {
+    padding: 8px 15px;
+    font-size: 14px;
+  }
+
+  input[type="text"] {
+    padding: 8px;
+    font-size: 14px;
+  }
+
+  header {
+    padding: 15px 0;
+    font-size: 20px;
+  }
+}
