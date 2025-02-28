@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <title>Arfi assistant</title>
     <style>
+      /* Global page styles */
       body {
         font-family: Arial, sans-serif;
         background-color: #f4f4f4;
@@ -13,6 +14,8 @@
         flex-direction: column;
         align-items: center;
       }
+
+      /* Header styles */
       header {
         background-color: #4caf50;
         color: white;
@@ -21,6 +24,8 @@
         text-align: center;
         font-size: 24px;
       }
+
+      /* Main container for chat and input */
       .container {
         margin: 20px auto;
         background: white;
@@ -32,6 +37,8 @@
         display: flex;
         flex-direction: column;
       }
+
+      /* Chat window */
       #chat {
         border: 1px solid #ccc;
         border-radius: 5px;
@@ -42,25 +49,43 @@
         display: flex;
         flex-direction: column;
       }
+
+      /* Message styles */
       .message {
         padding: 8px 12px;
         border-radius: 5px;
         margin: 5px;
         max-width: 80%;
         word-wrap: break-word;
+        position: relative; /* Добавлено для позиционирования таймстемпа */
       }
+
+      /* User messages (align right, green background) */
       .user {
         background-color: #d1e7dd;
         align-self: flex-end;
       }
+
+      /* Bot messages (align left, red background) */
       .bot {
         background-color: #f8d7da;
         align-self: flex-start;
       }
+
+      /* Typing indicator */
+      .typing {
+        font-style: italic;
+        color: #888;
+        align-self: flex-start;
+      }
+
+      /* Input field and button */
       #inputForm {
         display: flex;
         margin-top: 10px;
       }
+
+      /* Input field */
       input[type="text"] {
         flex: 1;
         padding: 10px;
@@ -68,6 +93,8 @@
         border-radius: 4px;
         font-size: 16px;
       }
+
+      /* Send button */
       button {
         background-color: #4caf50;
         color: white;
@@ -78,15 +105,36 @@
         font-size: 16px;
         margin-left: 10px;
       }
+
+      /* Button hover effect */
       button:hover {
         background-color: #45a049;
+      }
+
+      /* Style for timestamp */
+      .timestamp {
+        font-size: 10px;
+        color: #777;
+        display: block;
+        text-align: right;
+        margin-top: 4px;
+      }
+
+      /* Clear chat button style */
+      #clearChat {
+        margin-top: 10px;
+        margin-bottom: 10px;
       }
     </style>
   </head>
   <body>
+    <!-- Page header -->
     <header>Arfi assistant</header>
+
+    <!-- Chat container -->
     <div class="container">
       <div id="chat"></div>
+      <button id="clearChat">Clear Chat</button>
       <form id="inputForm">
         <input
           type="text"
@@ -99,57 +147,199 @@
     </div>
 
     <script>
-      // Store chat history
-      const chatHistory = [];
+      // Load chat history from local storage when the page loads
+      const chatHistory = loadChatHistory();
 
+      /**
+       * Load saved chat history from local storage.
+       * @returns {Array} Chat history as an array of messages.
+       */
+      function loadChatHistory() {
+        const savedHistory = localStorage.getItem("chatHistory");
+        return savedHistory ? JSON.parse(savedHistory) : [];
+      }
+
+      /**
+       * Save the current chat history to local storage.
+       */
+      function saveChatHistory() {
+        localStorage.setItem("chatHistory", JSON.stringify(chatHistory));
+      }
+
+      /**
+       * Display the stored chat history when the page is loaded.
+       */
+      function displayChatHistory() {
+        chatHistory.forEach((msg) => {
+          // Проверяем, есть ли у сообщения таймстемп, если нет - добавляем текущее время
+          const timestamp =
+            msg.timestamp ||
+            new Date().toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            });
+          addMessage(
+            formatMessage(msg.content),
+            msg.role === "user" ? "user" : "bot",
+            timestamp
+          );
+        });
+      }
+
+      // Display stored chat history when the page loads
+      document.addEventListener("DOMContentLoaded", displayChatHistory);
+
+      /**
+       * Handle "Clear Chat" button click.
+       * - Clears local storage.
+       * - Resets the chat history array.
+       * - Removes all chat messages from the UI.
+       */
+      document
+        .getElementById("clearChat")
+        .addEventListener("click", function () {
+          if (confirm("Are you sure you want to clear the chat?")) {
+            localStorage.removeItem("chatHistory"); // Remove chat history from storage
+            chatHistory.length = 0; // Reset chat history array
+            document.getElementById("chat").innerHTML = ""; // Clear UI messages
+          }
+        });
+
+      /**
+       * Handles the form submission when the user sends a message.
+       * - Sends user input to the backend.
+       * - Displays both user and bot messages.
+       * - Saves chat history to local storage.
+       */
       document
         .getElementById("inputForm")
         .addEventListener("submit", async function (event) {
-          event.preventDefault();
-          const userInput = document.getElementById("userInput").value;
-          if (!userInput.trim()) return;
+          event.preventDefault(); // Prevents page refresh on form submit
 
-          // Add user message to chat
-          addMessage(userInput, "user");
+          const userInput = document.getElementById("userInput").value; // Get user input
+          if (!userInput.trim()) return; // Ignore empty messages
 
-          // Save user message in chat history
-          chatHistory.push({ role: "user", content: userInput });
+          // Получаем текущее время
+          const timestamp = new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          });
 
-          // Clear input field
-          document.getElementById("userInput").value = "";
+          addMessage(userInput, "user", timestamp); // Display user message in chat with timestamp
+          chatHistory.push({
+            role: "user",
+            content: userInput,
+            timestamp: timestamp, // Сохраняем таймстемп
+          }); // Add user message to history
+          saveChatHistory(); // Save updated chat history
+
+          document.getElementById("userInput").value = ""; // Clear input field
+
+          // Show "Typing..." indicator
+          const typingIndicator = addTypingIndicator();
 
           try {
-            // Send request to FastAPI server
+            // Send request to FastAPI backend
             const response = await fetch("http://127.0.0.1:8000/ask", {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
               },
-              body: JSON.stringify({ messages: chatHistory }),
+              body: JSON.stringify({ messages: chatHistory }), // Send entire chat history
             });
 
             const data = await response.json();
 
-            // Add bot response to chat
-            addMessage(data.answer || "No response received", "bot");
+            // Remove "Typing..." indicator
+            removeTypingIndicator(typingIndicator);
 
-            // Save bot response in chat history
-            chatHistory.push({ role: "assistant", content: data.answer });
+            // Получаем новый таймстемп для ответа бота
+            const botTimestamp = new Date().toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            });
+
+            addMessage(
+              formatMessage(data.answer || "No response received"),
+              "bot",
+              botTimestamp
+            ); // Display bot response with timestamp
+
+            chatHistory.push({
+              role: "assistant",
+              content: data.answer,
+              timestamp: botTimestamp, // Сохраняем таймстемп для ответа бота
+            }); // Add bot response to history
+            saveChatHistory(); // Save updated chat history
           } catch (error) {
-            addMessage("Error: " + error, "bot");
+            removeTypingIndicator(typingIndicator);
+            const errorTimestamp = new Date().toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            });
+            addMessage("Error: " + error, "bot", errorTimestamp); // Show error message with timestamp
           }
         });
 
-      // Function to add a message to the chat window
-      function addMessage(text, sender) {
+      /**
+       * Adds a message to the chat window with a timestamp.
+       * @param {string} text - The message text.
+       * @param {string} sender - Either "user" or "bot".
+       * @param {string} timestamp - The timestamp for the message.
+       */
+      function addMessage(text, sender, timestamp) {
         const chat = document.getElementById("chat");
         const messageDiv = document.createElement("div");
         messageDiv.classList.add("message", sender);
-        messageDiv.innerText = text;
-        chat.appendChild(messageDiv);
 
-        // Scroll chat to the latest message
-        chat.scrollTop = chat.scrollHeight;
+        // Create message content with timestamp
+        messageDiv.innerHTML = `
+          <div class="message-text">${text}</div>
+          <div class="timestamp">${timestamp}</div>
+        `;
+
+        chat.appendChild(messageDiv);
+        chat.scrollTop = chat.scrollHeight; // Auto-scroll to latest message
+      }
+
+      /**
+       * Formats message text to support:
+       * - **Bold text** (Markdown `**bold**` -> `<b>bold</b>`)
+       * - *Italic text* (Markdown `*italic*` -> `<i>italic</i>`)
+       * - `Inline code` (Markdown `` `code` `` -> `<code>code</code>`)
+       * - Multi-line code blocks (Markdown ``` ``` code ``` ``` -> `<pre><code>code</code></pre>`)
+       * @param {string} text - The message text to format.
+       * @returns {string} Formatted HTML string.
+       */
+      function formatMessage(text) {
+        return text
+          .replace(/\*\*(.*?)\*\*/g, "<b>$1</b>") // Bold
+          .replace(/\*(.*?)\*/g, "<i>$1</i>") // Italic
+          .replace(/`(.*?)`/g, "<code>$1</code>") // Inline code
+          .replace(/```([\s\S]*?)```/g, "<pre><code>$1</code></pre>"); // Multi-line code blocks
+      }
+
+      /**
+       * Adds a "Typing..." message to indicate that the bot is responding.
+       * @returns {HTMLElement} The typing indicator element.
+       */
+      function addTypingIndicator() {
+        const chat = document.getElementById("chat");
+        const typingDiv = document.createElement("div");
+        typingDiv.classList.add("message", "typing");
+        typingDiv.innerText = "Arfi is typing...";
+        chat.appendChild(typingDiv);
+        chat.scrollTop = chat.scrollHeight; // Auto-scroll
+        return typingDiv;
+      }
+
+      /**
+       * Removes the "Typing..." indicator from the chat.
+       */
+      function removeTypingIndicator(typingDiv) {
+        if (typingDiv) {
+          typingDiv.remove();
+        }
       }
     </script>
   </body>
