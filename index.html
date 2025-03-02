@@ -14,6 +14,8 @@
     <div class="container">
       <div id="chat"></div>
       <button id="clearChat">Clear Chat</button>
+      <button id="openGoals">🎯 My Goals</button>
+      <!-- Button to open goals modal -->
       <form id="inputForm">
         <input
           type="text"
@@ -25,7 +27,18 @@
       </form>
     </div>
 
-    <!-- Подключаем скрипты в правильном порядке -->
+    <!-- Modal for goals management -->
+    <div id="goalModal" class="modal">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>My Goals</h2>
+        <!-- Goal list in modal -->
+        <ul id="goalList"></ul>
+        <button id="addGoal">➕ Add Goal</button>
+      </div>
+    </div>
+
+    <!-- Load scripts in correct order -->
     <script src="js/formatter.js"></script>
     <script src="js/storage.js"></script>
     <script src="js/api.js"></script>

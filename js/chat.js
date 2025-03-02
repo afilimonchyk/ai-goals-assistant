@@ -1,42 +1,45 @@
 /**
- * Модуль для управления чатом и отображения сообщений
+ * Chat module for managing chat messages and UI interactions
  */
 
 /**
- * Добавляет сообщение в окно чата
- *
- * @param {string} text - Текст сообщения
- * @param {string} sender - Отправитель (user или bot)
- * @param {string} timestamp - Временная метка
+ * Adds a message to the chat window with UI enhancements
  */
 function addMessage(text, sender, timestamp) {
   const chat = document.getElementById("chat");
   const messageDiv = document.createElement("div");
   messageDiv.classList.add("message", sender);
 
-  // Создаем содержимое сообщения с таймстемпом
   messageDiv.innerHTML = `
-      <div class="message-text">${text}</div>
+      <div class="message-content">
+        <span class="message-text">${text}</span>
+        <span class="copy-icon" title="Copy">
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+  </svg>
+</span>
+      </div>
       <div class="timestamp">${timestamp}</div>
     `;
 
-  // Добавляем возможность копирования сообщения
-  messageDiv.addEventListener("dblclick", function () {
-    copyToClipboard(text);
+  messageDiv.querySelector(".copy-icon").addEventListener("click", function () {
+    copyToClipboard(text, messageDiv);
   });
 
   chat.appendChild(messageDiv);
-  chat.scrollTop = chat.scrollHeight; // Автоматическая прокрутка
+  chat.scrollTop = chat.scrollHeight; // Auto-scroll to the latest message
+
+  setTimeout(() => {
+    messageDiv.classList.add("visible"); // Smooth message appearance
+  }, 10);
 }
 
 /**
- * Отображает сохраненную историю чата
- *
- * @param {Array} chatHistory - Массив сообщений для отображения
+ * Displays saved chat history with UI improvements
  */
 function displayChatHistory(chatHistory) {
   chatHistory.forEach((msg) => {
-    // Проверяем, есть ли у сообщения таймстемп, если нет - добавляем текущее время
     const timestamp = msg.timestamp || getCurrentTimestamp();
     addMessage(
       formatMessage(msg.content),
@@ -46,30 +49,41 @@ function displayChatHistory(chatHistory) {
   });
 }
 
-/**
- * Копирует текст в буфер обмена
- *
- * @param {string} text - Текст для копирования
- */
-function copyToClipboard(text) {
-  // Удаляем HTML-теги для получения чистого текста
-  const plainText = text.replace(/<\/?[^>]+(>|$)/g, "");
+// Делаем функцию глобальной
+window.displayChatHistory = displayChatHistory;
 
+/**
+ * Copies message text to clipboard with notification
+ */
+function copyToClipboard(text, messageDiv) {
+  const plainText = text.replace(/<\/?[^>]+(>|$)/g, "");
   navigator.clipboard.writeText(plainText).then(
     function () {
-      // Показываем уведомление об успешном копировании
-      alert("Текст скопирован в буфер обмена");
+      showCopyNotification(messageDiv);
     },
     function (err) {
-      console.error("Не удалось скопировать текст: ", err);
+      console.error("Copy failed: ", err);
     }
   );
 }
 
 /**
- * Получает текущее время в формате ЧЧ:ММ
- *
- * @returns {string} Текущее время в формате ЧЧ:ММ
+ * Shows a notification when text is copied
+ */
+function showCopyNotification(messageDiv) {
+  const notification = document.createElement("div");
+  notification.classList.add("copy-notification");
+  notification.innerText = "Copied!";
+  messageDiv.appendChild(notification);
+
+  setTimeout(() => {
+    notification.classList.add("fade-out");
+    setTimeout(() => notification.remove(), 500);
+  }, 1000);
+}
+
+/**
+ * Gets the current time in HH:MM format
  */
 function getCurrentTimestamp() {
   return new Date().toLocaleTimeString([], {
@@ -79,24 +93,20 @@ function getCurrentTimestamp() {
 }
 
 /**
- * Добавляет индикатор набора текста
- *
- * @returns {HTMLElement} Элемент индикатора
+ * Adds a typing indicator to the chat with smooth animation
  */
 function addTypingIndicator() {
   const chat = document.getElementById("chat");
   const typingDiv = document.createElement("div");
   typingDiv.classList.add("message", "typing");
-  typingDiv.innerText = "Arfi is typing...";
+  typingDiv.innerHTML = `<span class="typing-dots">...</span>`;
   chat.appendChild(typingDiv);
-  chat.scrollTop = chat.scrollHeight; // Автоматическая прокрутка
+  chat.scrollTop = chat.scrollHeight;
   return typingDiv;
 }
 
 /**
- * Удаляет индикатор набора текста
- *
- * @param {HTMLElement} typingDiv - Элемент индикатора
+ * Removes the typing indicator
  */
 function removeTypingIndicator(typingDiv) {
   if (typingDiv) {
