@@ -11,7 +11,10 @@ import ChatWindow from "./components/ChatWindow.vue";
 </template>
 
 <style scoped>
-/* Ensure the whole app has a clean background */
+/* 
+  Main application container. 
+  A light gray background, taking up the full viewport height.
+*/
 .app-container {
   background-color: #f8f9fa; /* Light Gray */
   min-height: 100vh;
@@ -19,6 +22,6 @@ import ChatWindow from "./components/ChatWindow.vue";
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  padding-top: 20px;
+  /* No extra padding-top needed since header is not fixed */
 }
 </style>

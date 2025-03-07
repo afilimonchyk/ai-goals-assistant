@@ -1,3 +1,5 @@
+// useChatAPI.js
+
 import { ref } from "vue";
 
 export function useChatAPI() {
@@ -6,8 +8,13 @@ export function useChatAPI() {
   const sendMessageToAPI = async (messages) => {
     isLoading.value = true;
     try {
-      // Convert messages to OpenAI format (ensure correct structure)
-      const formattedMessages = messages.map((msg) => ({
+      // Filter out messages without valid "text" (e.g. typing indicators)
+      const validMessages = messages.filter(
+        (msg) => typeof msg.text === "string" && msg.text.trim() !== ""
+      );
+
+      // Map messages to the format expected by the backend / OpenAI API
+      const formattedMessages = validMessages.map((msg) => ({
         role: msg.sender === "user" ? "user" : "assistant",
         content: msg.text,
       }));
@@ -17,7 +24,7 @@ export function useChatAPI() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ messages: formattedMessages }), // Ensure correct structure
+        body: JSON.stringify({ messages: formattedMessages }),
       });
 
       if (!response.ok) {
@@ -28,7 +35,7 @@ export function useChatAPI() {
       return data;
     } catch (error) {
       console.error("API request failed:", error);
-      return { answer: "Error: Failed to fetch AI response." }; // Fix return structure
+      return { answer: "Error: Failed to fetch AI response." };
     } finally {
       isLoading.value = false;
     }
