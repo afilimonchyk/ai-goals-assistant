@@ -4,83 +4,90 @@ import Header from "./components/Header.vue";
 import ChatWindow from "./components/ChatWindow.vue";
 import Goals from "./components/Goals.vue";
 
+// текущее состояние
 const currentView = ref("chat");
+// для анимации направления
+const slideDirection = ref("left");
+
+// смена экрана с определением направления
+function switchView(target) {
+  if (target === currentView.value) return;
+  slideDirection.value = target === "chat" ? "right" : "left";
+  currentView.value = target;
+}
 </script>
 
 <template>
-  <div class="app-container">
+  <div class="min-h-screen bg-gray-50 flex flex-col items-center">
     <Header />
 
     <!-- Navigation buttons -->
-    <div class="nav-buttons">
+    <div class="mt-6 flex gap-4 flex-wrap justify-center px-4">
       <button
-        :class="{ active: currentView === 'chat' }"
-        @click="currentView = 'chat'"
+        :class="[
+          'px-6 py-2 rounded-lg font-medium transition-all duration-200 shadow-sm',
+          currentView === 'chat'
+            ? 'bg-blue-700 text-white shadow-md'
+            : 'bg-white text-blue-600 border border-blue-500 hover:bg-blue-50',
+        ]"
+        @click="switchView('chat')"
       >
         💬 Chat
       </button>
+
       <button
-        :class="{ active: currentView === 'goals' }"
-        @click="currentView = 'goals'"
+        :class="[
+          'px-6 py-2 rounded-lg font-medium transition-all duration-200 shadow-sm',
+          currentView === 'goals'
+            ? 'bg-blue-700 text-white shadow-md'
+            : 'bg-white text-blue-600 border border-blue-500 hover:bg-blue-50',
+        ]"
+        @click="switchView('goals')"
       >
         🎯 Goals
       </button>
     </div>
 
-    <!-- View content -->
-    <div class="content">
-      <ChatWindow v-if="currentView === 'chat'" />
-      <Goals v-else />
+    <!-- Animated content -->
+    <div
+      class="w-full max-w-4xl px-4 py-6 relative overflow-hidden min-h-[300px]"
+    >
+      <transition :name="`slide-${slideDirection}`" mode="out-in">
+        <component
+          :is="currentView === 'chat' ? ChatWindow : Goals"
+          :key="currentView"
+        />
+      </transition>
     </div>
   </div>
 </template>
 
-<style scoped>
-.app-container {
-  background-color: #f8f9fa;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-/* Navigation buttons container */
-.nav-buttons {
-  margin-top: 16px;
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-  justify-content: center;
-  padding: 0 16px;
-}
-
-/* Individual buttons */
-.nav-buttons button {
-  padding: 10px 20px;
-  border: none;
-  border-radius: 8px;
-  background-color: #007bff;
-  color: white;
-  font-weight: bold;
-  font-size: 16px;
-  cursor: pointer;
-  transition: 0.3s;
-}
-
-.nav-buttons button:hover {
-  background-color: #0056b3;
-}
-
-.nav-buttons .active {
-  background-color: #0056b3;
-  box-shadow: 0 0 0 2px white, 0 0 0 4px #007bff;
-}
-
-/* Content area */
-.content {
+<style>
+/* Базовая стилизация для обеих анимаций */
+[class^="slide-"]-enter-active,
+[class^="slide-"]-leave-active {
+  transition: all 0.4s ease;
+  position: absolute;
   width: 100%;
-  max-width: 800px;
-  padding: 24px;
-  box-sizing: border-box;
+}
+
+/* Анимация "влево" */
+.slide-left-enter-from {
+  transform: translateX(100%);
+  opacity: 0;
+}
+.slide-left-leave-to {
+  transform: translateX(-100%);
+  opacity: 0;
+}
+
+/* Анимация "вправо" */
+.slide-right-enter-from {
+  transform: translateX(-100%);
+  opacity: 0;
+}
+.slide-right-leave-to {
+  transform: translateX(100%);
+  opacity: 0;
 }
 </style>

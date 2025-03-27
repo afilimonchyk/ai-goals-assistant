@@ -2,13 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Optional — базовая настройка фона и шрифта */
+/* Base global styles */
 html,
 body,
 #app {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  background-color: #f8f9fa;
-  font-family: system-ui, sans-serif;
+  @apply m-0 p-0 h-full bg-gray-100 font-sans text-gray-800;
 }

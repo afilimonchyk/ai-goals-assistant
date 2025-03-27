@@ -90,14 +90,14 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="w-full flex justify-center px-4 mt-6">
+  <div class="w-full flex justify-center px-4 py-6">
     <div
-      class="w-full max-w-3xl bg-white rounded-2xl shadow-lg p-6 flex flex-col"
+      class="w-full max-w-3xl bg-white rounded-2xl shadow-md p-6 flex flex-col"
     >
-      <!-- Chat messages -->
+      <!-- Сообщения -->
       <div
         ref="chatContainer"
-        class="flex flex-col gap-4 overflow-y-auto max-h-[500px] mb-4"
+        class="flex flex-col gap-4 overflow-y-auto h-[60vh] mb-4 pr-2"
       >
         <div
           v-for="(msg, index) in messages"
@@ -106,26 +106,39 @@ onMounted(() => {
             'p-3 rounded-xl max-w-[80%] relative',
             msg.sender === 'user'
               ? 'bg-blue-500 text-white self-end'
-              : 'bg-gray-200 text-gray-800 self-start',
+              : 'bg-gray-100 text-gray-800 self-start',
           ]"
         >
           <p v-if="msg.isTyping" class="flex gap-1 animate-pulse">
-            <span class="w-2 h-2 bg-gray-500 rounded-full"></span>
-            <span class="w-2 h-2 bg-gray-500 rounded-full"></span>
-            <span class="w-2 h-2 bg-gray-500 rounded-full"></span>
+            <span class="w-2 h-2 bg-gray-400 rounded-full"></span>
+            <span class="w-2 h-2 bg-gray-400 rounded-full"></span>
+            <span class="w-2 h-2 bg-gray-400 rounded-full"></span>
           </p>
-          <p v-else class="whitespace-pre-wrap">
+          <p v-else class="whitespace-pre-wrap flex items-center">
             {{ msg.text }}
-            <span
-              class="ml-2 cursor-pointer opacity-50 hover:opacity-100"
+            <button
               @click="copyMessage(msg.text)"
-              title="Copy"
+              title="Copy message"
+              class="ml-2 text-gray-400 hover:text-gray-600 transition"
             >
-              📋
-            </span>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m0 4h2a2 2 0 012 2v6a2 2 0 01-2 2h-8a2 2 0 01-2-2v-2"
+                />
+              </svg>
+            </button>
           </p>
           <span
-            class="text-xs absolute bottom-[-18px] right-2 text-gray-500"
+            class="text-xs absolute bottom-[-18px] right-2 text-gray-400"
             v-if="msg.timestamp"
           >
             {{ msg.timestamp }}
@@ -133,13 +146,13 @@ onMounted(() => {
         </div>
       </div>
 
-      <!-- Input field -->
+      <!-- Поле ввода -->
       <InputForm @send-message="addMessage" />
 
-      <!-- Clear chat button -->
+      <!-- Кнопка очистки -->
       <button
         @click="clearChat"
-        class="mt-4 bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-md self-end"
+        class="mt-4 bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-md self-end"
       >
         Clear Chat
       </button>

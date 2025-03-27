@@ -1,39 +1,97 @@
 <template>
-  <div class="goals">
-    <h2>🎯 My Goals</h2>
+  <div class="goals space-y-6">
+    <!-- Title -->
+    <h2 class="text-2xl font-semibold text-gray-800 flex items-center gap-2">
+      🎯 My Goals
+    </h2>
 
-    <!-- Form to add a new goal -->
-    <form @submit.prevent="addGoal" class="goal-form">
-      <input v-model="newGoal.title" placeholder="Goal title" required />
+    <!-- Add goal form -->
+    <form @submit.prevent="addGoal" class="flex flex-col md:flex-row gap-4">
+      <input
+        v-model="newGoal.title"
+        placeholder="Goal title"
+        required
+        class="flex-1 px-4 py-2 rounded-lg border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+      />
       <input
         v-model.number="newGoal.target"
         type="number"
+        min="1"
         placeholder="Target (e.g., 100)"
         required
+        class="w-28 px-4 py-2 rounded-lg border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
       />
-      <button type="submit">Add Goal</button>
+      <button
+        type="submit"
+        class="bg-blue-500 text-white font-semibold px-4 py-2 rounded-lg hover:bg-blue-600 transition"
+      >
+        Add Goal
+      </button>
     </form>
 
     <!-- Goal list -->
-    <div v-if="goals.length">
-      <div v-for="goal in goals" :key="goal.id" class="goal">
-        <h3>{{ goal.title }}</h3>
-        <progress :value="goal.progress" :max="goal.target"></progress>
-        <p>{{ goal.progress }} / {{ goal.target }}</p>
+    <div v-if="goals.length" class="space-y-4">
+      <div
+        v-for="goal in goals"
+        :key="goal.id"
+        class="bg-white p-4 rounded-lg shadow-md border border-gray-100"
+      >
+        <div class="flex items-center justify-between mb-2">
+          <input
+            v-model="goal.title"
+            class="text-lg font-semibold text-gray-800 bg-transparent border-none w-full focus:outline-none"
+          />
+          <p class="text-sm text-gray-500">
+            {{ goal.progress }} / {{ goal.target }} ({{ getPercentage(goal) }}%)
+          </p>
+        </div>
 
-        <!-- Input and button to update progress -->
-        <input
-          v-model.number="goal.newProgress"
-          type="number"
-          :placeholder="goal.progress"
+        <!-- Progress bar -->
+        <progress
+          :value="goal.progress"
+          :max="goal.target"
+          class="w-full h-3 accent-blue-500 rounded-full bg-gray-200"
         />
-        <button @click="updateGoal(goal)">Update Progress</button>
+
+        <!-- Update section -->
+        <div class="flex flex-col sm:flex-row sm:items-center gap-2 mt-3">
+          <input
+            v-model.number="goal.newProgress"
+            type="number"
+            min="0"
+            :max="goal.target"
+            class="flex-1 px-3 py-1.5 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+          />
+          <div class="flex gap-2">
+            <button
+              @click="updateGoal(goal)"
+              class="bg-green-500 text-white px-4 py-1.5 rounded-md hover:bg-green-600 transition"
+            >
+              Update
+            </button>
+            <button
+              @click="suggestNextStep(goal)"
+              class="bg-purple-500 text-white px-4 py-1.5 rounded-md hover:bg-purple-600 transition"
+            >
+              💡 Suggest
+            </button>
+            <button
+              @click="deleteGoal(goal.id)"
+              class="bg-red-500 text-white px-4 py-1.5 rounded-md hover:bg-red-600 transition"
+            >
+              Delete
+            </button>
+          </div>
+        </div>
+
+        <p v-if="goal.suggestion" class="text-sm text-gray-700 mt-2 italic">
+          👉 {{ goal.suggestion }}
+        </p>
       </div>
     </div>
 
-    <div v-else>
-      <p>No goals yet 😕</p>
-    </div>
+    <!-- No goals message -->
+    <div v-else class="text-gray-500 text-sm">No goals yet 😕</div>
   </div>
 </template>
 
@@ -46,55 +104,62 @@ export default {
         title: "",
         target: 0,
       },
-      nextId: 1, // simple ID generator (in place of database)
+      nextId: 1,
     };
   },
   methods: {
-    // Load goals from backend
-    async fetchGoals() {
-      try {
-        const res = await fetch("http://localhost:8000/goals");
-        this.goals = await res.json();
-        this.goals.forEach((goal) => (goal.newProgress = goal.progress));
-      } catch (error) {
-        console.error("Failed to fetch goals:", error);
+    getPercentage(goal) {
+      return Math.round((goal.progress / goal.target) * 100);
+    },
+    saveGoals() {
+      localStorage.setItem("goals", JSON.stringify(this.goals));
+    },
+    fetchGoals() {
+      const saved = localStorage.getItem("goals");
+      if (saved) {
+        this.goals = JSON.parse(saved);
+        this.goals.forEach((g) => {
+          g.newProgress = g.progress;
+          g.suggestion = "";
+        });
       }
     },
-
-    // Add a new goal
-    async addGoal() {
+    addGoal() {
       const goal = {
         id: this.nextId++,
         title: this.newGoal.title,
         target: this.newGoal.target,
         progress: 0,
+        newProgress: 0,
+        suggestion: "",
       };
-      const res = await fetch("http://localhost:8000/goals", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(goal),
-      });
-      const data = await res.json();
-      data.newProgress = 0;
-      this.goals.push(data);
+      this.goals.push(goal);
+      this.saveGoals();
       this.newGoal.title = "";
       this.newGoal.target = 0;
     },
-
-    // Update progress for a specific goal
-    async updateGoal(goal) {
-      const res = await fetch(
-        `http://localhost:8000/goals/${goal.id}?progress=${goal.newProgress}`,
-        {
-          method: "PUT",
-        }
-      );
-      const updated = await res.json();
-      goal.progress = updated.progress;
+    updateGoal(goal) {
+      goal.progress = goal.newProgress;
+      this.saveGoals();
+    },
+    deleteGoal(id) {
+      this.goals = this.goals.filter((g) => g.id !== id);
+      this.saveGoals();
+    },
+    async suggestNextStep(goal) {
+      const response = await fetch("http://localhost:8000/goals/suggest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: goal.title,
+          progress: goal.progress,
+          target: goal.target,
+        }),
+      });
+      const data = await response.json();
+      goal.suggestion = data.suggestion || "No suggestion available.";
     },
   },
-
-  // Load goals when component is mounted
   mounted() {
     this.fetchGoals();
   },
@@ -103,45 +168,11 @@ export default {
 
 <style scoped>
 .goals {
-  max-width: 600px;
+  max-width: 700px;
   margin: auto;
   padding: 20px;
   background-color: #ffffff;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-}
-
-.goal-form {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 20px;
-}
-
-.goal-form input {
-  flex: 1;
-  padding: 8px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-}
-
-.goal-form button {
-  padding: 8px 14px;
-  background-color: #007bff;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.goal-form button:hover {
-  background-color: #0056b3;
-}
-
-.goal {
-  border: 1px solid #ddd;
-  padding: 12px;
-  margin-top: 10px;
-  border-radius: 8px;
-  background-color: #f9f9f9;
 }
 </style>
