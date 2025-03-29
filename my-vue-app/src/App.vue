@@ -2,7 +2,7 @@
 import { ref } from "vue";
 import Header from "./components/Header.vue";
 import ChatWindow from "./components/ChatWindow.vue";
-import Goals from "./components/Goals.vue";
+import Goals from "./views/GoalsView.vue";
 
 // текущее состояние
 const currentView = ref("chat");
