@@ -16,10 +16,10 @@
       <span v-else>Cancel</span>
     </button>
 
-    <!-- New goal form component -->
+    <!-- New goal form -->
     <NewGoalForm v-if="showForm" @goal-added="addGoal" />
 
-    <!-- Draggable goals list -->
+    <!-- Draggable list of goals -->
     <draggable
       v-model="goals"
       item-key="id"
@@ -69,12 +69,14 @@ export default {
     };
   },
   methods: {
+    // Fetch goals from the server
     async fetchGoals() {
       try {
         const res = await fetch("http://localhost:8000/goals");
         const data = await res.json();
         this.goals = data.map((g) => ({
           ...g,
+          subtasks: g.subtasks || [],
           newProgress: g.progress || 0,
           newSubtask: "",
           aiSubtasks: [],
@@ -84,39 +86,69 @@ export default {
         console.error("Failed to load goals:", err);
       }
     },
+
+    // Add a new goal and refresh the list
     async addGoal(newGoalData) {
       try {
-        const res = await fetch("http://localhost:8000/goals", {
+        await fetch("http://localhost:8000/goals", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(newGoalData),
         });
-        const created = await res.json();
-        this.goals.push({
-          ...created,
-          newProgress: 0,
-          newSubtask: "",
-          aiSubtasks: [],
-          motivation: "",
-        });
+
+        await this.fetchGoals();
         this.showForm = false;
         this.saveOrder();
       } catch (err) {
         console.error("Failed to create goal:", err);
       }
     },
+
+    // Update a goal on the server and refresh local list
     async updateGoal(goal) {
       goal.progress = goal.newProgress;
+
+      const payload = {
+        id: goal.id,
+        title: goal.title,
+        category: goal.category,
+        isMeasurable: goal.isMeasurable,
+        target: goal.target,
+        progress: goal.progress,
+        completed: goal.completed,
+        subtasks: goal.subtasks || [],
+        aiSubtasks: goal.aiSubtasks || [],
+        motivation: goal.motivation || "",
+      };
+
       try {
-        await fetch(`http://localhost:8000/goals/${goal.id}`, {
+        const res = await fetch(`http://localhost:8000/goals/${goal.id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(goal),
+          body: JSON.stringify(payload),
         });
+
+        if (res.ok) {
+          const updated = await res.json();
+
+          // Replace the goal in the local list
+          const index = this.goals.findIndex((g) => g.id === updated.id);
+          if (index !== -1) {
+            this.goals[index] = {
+              ...updated,
+              newProgress: updated.progress || 0,
+              newSubtask: "",
+              aiSubtasks: updated.aiSubtasks || [],
+              motivation: updated.motivation || "",
+            };
+          }
+        }
       } catch (err) {
         console.error("Failed to update goal:", err);
       }
     },
+
+    // Delete a goal and update the list
     async deleteGoal(id) {
       try {
         await fetch(`http://localhost:8000/goals/${id}`, {
@@ -128,6 +160,8 @@ export default {
         console.error("Failed to delete goal:", err);
       }
     },
+
+    // Ask AI for suggestions
     async suggestNextStep(goal) {
       try {
         const response = await fetch("http://localhost:8000/goals/suggest", {
@@ -146,27 +180,29 @@ export default {
         console.error("AI suggestion failed:", err);
       }
     },
+
+    // Add subtask and save goal
     addSubtask(goal) {
       if (goal.newSubtask && goal.newSubtask.trim()) {
         goal.subtasks.push({ text: goal.newSubtask, done: false });
         goal.newSubtask = "";
+        this.updateGoal(goal);
       }
     },
+
+    // Add suggested subtask from AI
     addSuggestedSubtask(goal, text) {
       goal.subtasks.push({ text, done: false });
+      this.updateGoal(goal);
     },
-    async toggleGoalCompleted(goal) {
+
+    // Toggle completion status
+    toggleGoalCompleted(goal) {
       goal.completed = !goal.completed;
-      try {
-        await fetch(`http://localhost:8000/goals/${goal.id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(goal),
-        });
-      } catch (err) {
-        console.error("Failed to update goal status:", err);
-      }
+      this.updateGoal(goal);
     },
+
+    // Save reordered list
     async saveOrder() {
       try {
         await fetch("http://localhost:8000/goals", {
