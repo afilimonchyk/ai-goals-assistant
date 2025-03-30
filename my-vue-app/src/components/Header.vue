@@ -9,7 +9,7 @@
       </div>
       <!-- Assistant title -->
       <h1 class="text-white text-2xl sm:text-3xl font-semibold tracking-tight">
-        arfi-assistant
+        arfi-goals
       </h1>
     </div>
   </header>
