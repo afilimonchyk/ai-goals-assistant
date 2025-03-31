@@ -13,7 +13,8 @@
           @click="toggleCompleted"
           :class="[
             'transition-all duration-300 ease-in-out transform',
-            'rounded-full w-8 h-8 flex items-center justify-center',
+            'rounded-full w-8 aspect-square flex items-center justify-center',
+            'text-base leading-none p-0',
             goal.completed
               ? 'bg-green-500 text-white scale-110 hover:bg-green-600'
               : 'bg-gray-100 text-gray-400 hover:text-green-500 hover:bg-green-50',
@@ -25,15 +26,21 @@
         </button>
 
         <!-- Title + Category -->
-        <div>
-          <input
-            v-model="goal.title"
-            :readonly="goal.completed"
+        <div class="w-full">
+          <div
+            ref="titleInput"
+            contenteditable="true"
             :class="[
-              'text-lg font-medium bg-transparent border-none focus:outline-none',
+              'text-lg font-medium bg-transparent border-none w-full focus:outline-none',
+              'leading-tight tracking-tight',
               goal.completed ? 'text-gray-400 line-through' : 'text-gray-900',
             ]"
-          />
+            @input="goal.title = $event.target.innerText"
+            :contenteditable="!goal.completed"
+          >
+            {{ goal.title }}
+          </div>
+
           <div v-if="goal.category" class="mt-1">
             <span
               :class="[
@@ -178,7 +185,7 @@
         >
           <span class="text-gray-800">{{ subtask }}</span>
           <button
-            @click="$emit('add-suggested-subtask', goal, subtask)"
+            @click="addSuggestedAndKeepOpen(subtask)"
             class="text-xs text-blue-700 bg-blue-100 hover:bg-blue-200 px-3 py-1 rounded-md font-semibold transition w-16 text-center"
             :disabled="goal.completed"
           >
@@ -221,12 +228,27 @@ export default {
       this.goal.subtasks.splice(index, 1);
       this.$emit("update", this.goal);
     },
+    autoResize(event) {
+      const textarea = event.target;
+      textarea.style.height = "auto";
+      textarea.style.height = `${textarea.scrollHeight}px`;
+    },
+    addSuggestedAndKeepOpen(subtask) {
+      this.goal.showSuggestions = true;
+      this.$emit("add-suggested-subtask", this.goal, subtask);
+    },
   },
   mounted() {
-    // Ensure visibility toggle is initialized
     if (this.goal.showSuggestions === undefined) {
       this.goal.showSuggestions = true;
     }
+    this.$nextTick(() => {
+      const el = this.$refs.titleInput;
+      if (el) {
+        el.style.height = "auto";
+        el.style.height = `${el.scrollHeight}px`;
+      }
+    });
   },
 };
 </script>

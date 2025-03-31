@@ -69,7 +69,6 @@ export default {
     };
   },
   methods: {
-    // Fetch goals from the server
     async fetchGoals() {
       try {
         const res = await fetch("http://localhost:8000/goals");
@@ -81,13 +80,13 @@ export default {
           newSubtask: "",
           aiSubtasks: [],
           motivation: "",
+          showSuggestions: true,
         }));
       } catch (err) {
         console.error("Failed to load goals:", err);
       }
     },
 
-    // Add a new goal and refresh the list
     async addGoal(newGoalData) {
       try {
         await fetch("http://localhost:8000/goals", {
@@ -104,7 +103,6 @@ export default {
       }
     },
 
-    // Update a goal on the server and refresh local list
     async updateGoal(goal) {
       goal.progress = goal.newProgress;
 
@@ -131,15 +129,21 @@ export default {
         if (res.ok) {
           const updated = await res.json();
 
-          // Replace the goal in the local list
           const index = this.goals.findIndex((g) => g.id === updated.id);
           if (index !== -1) {
+            const oldGoal = this.goals[index];
+            const showSuggestions =
+              oldGoal?.showSuggestions !== undefined
+                ? oldGoal.showSuggestions
+                : true;
+
             this.goals[index] = {
               ...updated,
               newProgress: updated.progress || 0,
               newSubtask: "",
               aiSubtasks: updated.aiSubtasks || [],
               motivation: updated.motivation || "",
+              showSuggestions,
             };
           }
         }
@@ -148,7 +152,6 @@ export default {
       }
     },
 
-    // Delete a goal and update the list
     async deleteGoal(id) {
       try {
         await fetch(`http://localhost:8000/goals/${id}`, {
@@ -161,7 +164,6 @@ export default {
       }
     },
 
-    // Ask AI for suggestions
     async suggestNextStep(goal) {
       try {
         const response = await fetch("http://localhost:8000/goals/suggest", {
@@ -176,12 +178,12 @@ export default {
         const data = await response.json();
         goal.aiSubtasks = data.subtasks || [];
         goal.motivation = data.motivation || "";
+        goal.showSuggestions = true;
       } catch (err) {
         console.error("AI suggestion failed:", err);
       }
     },
 
-    // Add subtask and save goal
     addSubtask(goal) {
       if (goal.newSubtask && goal.newSubtask.trim()) {
         goal.subtasks.push({ text: goal.newSubtask, done: false });
@@ -190,19 +192,17 @@ export default {
       }
     },
 
-    // Add suggested subtask from AI
     addSuggestedSubtask(goal, text) {
       goal.subtasks.push({ text, done: false });
+      goal.showSuggestions = true;
       this.updateGoal(goal);
     },
 
-    // Toggle completion status
     toggleGoalCompleted(goal) {
       goal.completed = !goal.completed;
       this.updateGoal(goal);
     },
 
-    // Save reordered list
     async saveOrder() {
       try {
         await fetch("http://localhost:8000/goals", {
